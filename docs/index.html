@@ -310,7 +310,7 @@ function stepDone(st){if(st.type==='place')return st.items.every(i=>i.placed||i.
 function advance(){while(G.cur<G.steps.length&&stepDone(G.steps[G.cur])){const st=G.steps[G.cur],ti=st.ti;G.cur++;const next=G.steps[G.cur];
   if(!next||next.ti!==ti){const t=G.tasks[ti];if(!t.done){t.done=true;sfx.win();spark(cam.x,cam.y-40,26);G.msgs=[{t:'Так правильно! '+t.rule,d:5,kind:'good'}];say(t.rule)}if(next){G.msgs.push({t:next.say,d:7});say(next.say,true)}}
   else{sfx.pop();msg(next.say);say(next.say)}G.idle=0}}
-function finishRoom(){G.run=false;G.done=true;const def=G.def;G.after=snap();const share=G.time/G.max,stars=share>.45?3:share>.2?2:1;G0.rooms[def.id]='clean';G0.stars[def.id]=Math.max(G0.stars[def.id]||0,stars);
+function finishRoom(){G.run=false;G.done=true;$('#bHome').hidden=true;const def=G.def;G.after=snap();const share=G.time/G.max,stars=share>.45?3:share>.2?2:1;G0.rooms[def.id]='clean';G0.stars[def.id]=Math.max(G0.stars[def.id]||0,stars);
  const i=ROOMS.indexOf(def);if(ROOMS[i+1]&&G0.rooms[ROOMS[i+1].id]==='locked')G0.rooms[ROOMS[i+1].id]='new';save();sfx.win();S='before';St=0;G.stars=stars;
  const left=ROOMS.filter(r=>G0.rooms[r.id]!=='clean').length;
  play([{who:'Мама',text:left?'Какая красота! Вот как было и как стало. Молодец!':'Вот это порядок! Весь дом сияет. Молодец!',scene:'before'}],()=>{left?toMap():toFinal()})}
@@ -346,7 +346,7 @@ function step(dt){T+=dt;St+=dt;
  if(G.cur>=G.steps.length&&allPlaced&&!G.cr&&!G.items.some(i=>i.fly||i.tw)){finishRoom();return}
  if(G.time<=0){G.time=0;startAttack()}}
 
-function startAttack(){G.run=false;G.cr=null;ptr.drag=null;S='attack';St=0;A.t=0;A.hit=false;sfx.cackle();say('Ха-ха-ха! Не успели!')}
+function startAttack(){G.run=false;G.cr=null;ptr.drag=null;$('#bHome').hidden=true;S='attack';St=0;A.t=0;A.hit=false;sfx.cackle();say('Ха-ха-ха! Не успели!')}
 const A={t:0,hit:false};
 function updateAttack(dt){A.t+=dt;if(A.t>1.3&&!A.hit){A.hit=true;sfx.magic();G.items.forEach(i=>{if(i.placed&&!i.gone)scatter(i)});spark(600,300,60,'#7fae2e');
   const id=G.def.id,prior=ROOMS.filter(r=>G0.rooms[r.id]==='clean');prior.forEach(r=>G0.rooms[r.id]='messy');if(G0.rooms[id]!=='messy')G0.rooms[id]=G0.rooms[id]==='new'?'failed':G0.rooms[id];G0.weak++;G0.attacks++;save();A.prior=prior.length}
@@ -456,8 +456,8 @@ function drawMap(){sky('#241433','#4a2b6b');for(let i=0;i<30;i++)L(star((i*151)%
   R(x,y,w,h,0,null,INK,5);c.font='26px Neucha,sans-serif';const tw=c.measureText(r.name).width+28;R(x+12,y+10,tw,36,10,'#fff6dd');c.fillStyle=INK;c.textAlign='left';c.textBaseline='middle';c.fillText(r.name,x+26,y+29);c.textBaseline='alphabetic';
   if(st==='clean'){for(let i=0;i<3;i++)L(star(x+w-30-i*36,y+30,16,7),i<(G0.stars[r.id]||1)?'#ffc83d':'#ffffff55')}}
  if(bad){witch(740,120,.75,T);rat(240,690,1,false,T)}else fairy(300,120,.7,T)}
-function mapTap(x,y){for(const r of ROOMS){const st=G0.rooms[r.id],[a,b,w,h]=RECT[r.id];if(x>a&&x<a+w&&y>b&&y<b+h){if(st==='locked'){say('Сначала убери другую комнату.');return}if(st==='clean'){say('Здесь уже чисто.');return}$('#top').hidden=false;startRoom(r.id);return}}}
-function toMap(){G=null;S='map';St=0;cam.x=600;cam.y=375;cam.z=1;$('#top').hidden=false;$('#bHome').hidden=true;$('#cap').hidden=true;const bad=ROOMS.filter(r=>['messy','failed'].includes(G0.rooms[r.id])).length,clean=ROOMS.filter(r=>G0.rooms[r.id]==='clean').length;
+function mapTap(x,y){for(const r of ROOMS){const st=G0.rooms[r.id],[a,b,w,h]=RECT[r.id];if(x>a&&x<a+w&&y>b&&y<b+h){if(st==='locked'){play([{who:'Мама',text:'Сначала убери другую комнату.',auto:true}],null);return}if(st==='clean'){play([{who:'Мама',text:'Здесь уже чисто. Выбери другую комнату.',auto:true}],null);return}$('#top').hidden=false;startRoom(r.id);return}}}
+function toMap(){if(ROOMS.every(r=>G0.rooms[r.id]==='clean')){toFinal();return}G=null;S='map';St=0;cam.x=600;cam.y=375;cam.z=1;$('#top').hidden=false;$('#bHome').hidden=true;$('#cap').hidden=true;const bad=ROOMS.filter(r=>['messy','failed'].includes(G0.rooms[r.id])).length,clean=ROOMS.filter(r=>G0.rooms[r.id]==='clean').length;
  const t=bad?'Камчильда в доме! Нажми на грязную комнату.':clean?'Отлично! Иди в следующую комнату.':'Нажми на детскую.';play([{who:'Мама',text:t,scene:null,auto:true}],null)}
 function drawBefore(){c.drawImage(BG[G.def.id],0,0,W0,H0);c.fillStyle='#241433dd';c.fillRect(0,0,W0,H0);const bw=540,bh=337,y=80;
  [[G.before,'Было',40],[G.after,'Стало',620]].forEach(([im,t,x])=>{R(x-8,y-8,bw+16,bh+16,8,'#fff6dd');c.drawImage(im,x,y,bw,bh);c.font='30px Neucha,sans-serif';c.fillStyle='#fff6dd';c.textAlign='center';c.fillText(t,x+bw/2,y-22)});
